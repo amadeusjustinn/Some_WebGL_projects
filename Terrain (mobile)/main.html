@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Terrain (mobile)</title>
 </head>
 
 <script src="gl-matrix-min.js"></script>
 <script src="Terrain.js"></script>
-<script src="MP2.js"></script>
+<script src="terrainmobile.js"></script>
 
 <!-- MP2: Modify the shaders to implement Phong shading instead of Gourand! -->
 <script id="shader-vs" type="x-shader/x-vertex">#version 300 es
@@ -35,12 +35,13 @@ uniform float maxZ;
 uniform float minZ;
 
 out vec3 kDiffuseNew;
+out vec3 vertexPositionCopy;
 out vec3 vertexPositionView;
 out vec3 vertexNormalView;
 
 
 void main(void) {
-    // Compute a normalized elevation for the vertex
+    // Compute a normalized elevation for the vertex.
     float nrmZ;
    	nrmZ = (vertexPosition.z - minZ) / (maxZ - minZ);
 
@@ -52,7 +53,7 @@ void main(void) {
         kDiffuseNew = vec3(0.9, 0.1, 0.9);
     }
 
-    // Transform the vertex position and normal to view coordinates
+    // Transform the vertex position and normal to view coordinates.
     vertexPositionView = (modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
     vertexNormalView = normalize(normalMatrix * vertexNormal);
 
@@ -87,7 +88,11 @@ uniform vec3 ambientLightColor;
 uniform vec3 diffuseLightColor;
 uniform vec3 specularLightColor;
 
-out vec4 fragmentColor;
+uniform bool fog;
+uniform vec4 u_fogColour;
+uniform float u_fogDensity;
+
+out vec4 outColour;
 
 
 void main(void) {
@@ -112,9 +117,17 @@ void main(void) {
 
     // Sum up all three lighting components into the color for the vertex,
     // and interpolate the computed vertex color for each fragment.
-    fragmentColor = vec4((kAmbient * ambientLightColor
+    vec4 fragmentColor = vec4((kAmbient * ambientLightColor
                         + kDiffuseFinal * diffuseLightColor * diffuseWeight
                         + kSpecular * specularLightColor * specularWeight), 1.0);
+
+    // Perform per-pixel depth fog computation.
+    float LOG2 = 1.442695;
+    float fogDistance = length(gl_FragCoord.z / gl_FragCoord.w);
+    float fogAmount = 1. - exp2(-u_fogDensity * u_fogDensity * fogDistance * fogDistance * LOG2);
+    fogAmount = clamp(fogAmount, 0., 1.);
+    if (fog) outColour = mix(fragmentColor, u_fogColour, fogAmount);
+    else outColour = fragmentColor;
 }
 </script>
 
@@ -126,15 +139,6 @@ void main(void) {
         <fieldset>
             <legend>Rendering Options</legend>
             <div>
-                <input type="range" id="x_value" min="-3" max="3" value="0" step="0.01">
-                <label for="x_value">X value&emsp;</label>
-                <input type="range" id="y_value" min="-3" max="3" value="0" step="0.01">
-                <label for="y_value">Y value&emsp;</label>
-                <input type="range" id="rotateSlider" min="-359" max="359" value="0" step="0.01">
-                <label for="y_value">Rotation angle (if "Rotate terrain" is not checked)&emsp;</label>
-                <input type="range" id="zoom" min="-90" max="-15" value="-45">
-                <label for="zoom">Zoom</label><br><br>
-
                 <input type="radio" name="primitive" id="wireframe" value="wireframe">
                 <label for="wireframe">Wireframe</label><br>
                 <input type="radio" name="primitive" id="polygon" value="polygon" checked>
@@ -142,13 +146,62 @@ void main(void) {
                 <input type="radio" name="primitive" id="wirepoly" value="wirepoly">
                 <label for="wirepoly">Polygon with Edges</label><br><br>
 
-                <input type="checkbox" id="rotate">
-                <label for="rotate">Rotate terrain&emsp;</label>
-                <input type="checkbox" id="clockwise" checked>
-                <label for="clockwise">Rotate terrain clockwise</label>
+                <input type="checkbox" id="fog">
+                <label for="fog">Enable Fog&emsp;</label>
+                <input type="range" id="fogDensity" min="0.001" max="0.03" value="0.01" step="0.0001" disabled>
+                <label for="fogDensity">Fog Density</label>
             </div>
         </fieldset>
     </form>
+
+    <fieldset>
+        <legend>Controlling the user interface</legend>
+        <p>
+            Keep in mind, the canvas renders a view of the terrain from the perspective of someone flying over it.
+            Use the controls listed below to modify this view as you wish :)
+        </p>
+        <p id="currentSpeed"></p>
+        <input type="button" id="freeze" value="Freeze camera (set camera speed to 0)">
+        <table style="border:1px solid black; width:100%">
+            <tr>
+                <th>Keys: what they probably look like on your keyboard</th>
+                <th>What they do</th>
+            </tr>
+            <tbody>
+                <tr>
+                    <td style="text-align:center">Escape: Esc</td>
+                    <td style="text-align:center">
+                        Reset the current view to the initial viewpoint and direction
+                        (helpful when camera goes out of range)
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align:center">Left arrow: &larr;</td>
+                    <td style="text-align:center">Make the camera roll to its left</td>
+                </tr>
+                <tr>
+                    <td style="text-align:center">Right arrow: &rarr;</td>
+                    <td style="text-align:center">Make the camera roll to its right</td>
+                </tr>
+                <tr>
+                    <td style="text-align:center">Up arrow: &uarr;</td>
+                    <td style="text-align:center">Make the camera pitch up</td>
+                </tr>
+                <tr>
+                    <td style="text-align:center">Down arrow: &darr;</td>
+                    <td style="text-align:center">Make the camera pitch down (without crashing; it can't)</td>
+                </tr>
+                <tr>
+                    <td style="text-align:center">Plus sign: + (Shift AND equal sign)</td>
+                    <td style="text-align:center">Increase the camera's speed</td>
+                </tr>
+                <tr>
+                    <td style="text-align:center">Minus sign: -</td>
+                    <td style="text-align:center">Decrease the camera's speed</td>
+                </tr>
+            </tbody>
+        </table>
+    </fieldset>
 
     <fieldset>
         <legend>Colour map</legend>

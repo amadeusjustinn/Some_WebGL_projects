@@ -1,5 +1,5 @@
 /**
- * @file MP3.js - A simple WebGL rendering engine
+ * @file terrainmobile.js - A simple WebGL rendering engine
 
 /** @global The WebGL context */
 let gl;

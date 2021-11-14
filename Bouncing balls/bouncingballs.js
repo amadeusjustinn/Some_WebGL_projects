@@ -1,5 +1,5 @@
 /**
- * @file MP5.js - A simple WebGL rendering engine
+ * @file bouncingballs.js - A simple WebGL rendering engine
  */
 
 /** @global The WebGL context */

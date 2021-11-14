@@ -1,5 +1,5 @@
 /**
- * @file MP2.js - A simple WebGL rendering engine
+ * @file terrainstagnant.js - A simple WebGL rendering engine
  */
 
 let angle = 0;
