@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MP5L Physics!</title>
+</head>
+<!-- If you add additional .js files, be sure to add them here. -->
+<script src="gl-matrix-min.js"></script>
+<script src="Sphere.js"></script>
+<script src="MP5.js"></script>
+
+<!-- Modify to include diffuse material color as an attribute! -->
+<script id="shader-vs" type="x-shader/x-vertex">#version 300 es
+
+// Use high-precision floats if available on this device.
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+in vec3 vertexPosition;
+in vec3 vertexNormal;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat3 normalMatrix;
+
+out vec3 fragPosition;
+out vec3 fragNormal;
+
+void main(void) {
+    // Transform the vertex position and normal to view coordinates
+    fragPosition = (modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
+    fragNormal = normalize(normalMatrix * vertexNormal);
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
+}
+</script>
+
+<!-- Fragment shader: does basic Blinn-Phong shading. -->
+<script id="shader-fs" type="x-shader/x-fragment">#version 300 es
+
+// Use high-precision floats if available on this device.
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+in vec3 fragPosition;
+in vec3 fragNormal;
+
+uniform vec3 kAmbient;
+uniform vec3 kDiffuse;
+uniform vec3 kSpecular;
+uniform float shininess;
+uniform vec3 lightPosition;
+uniform vec3 ambientLightColor;
+uniform vec3 diffuseLightColor;
+uniform vec3 specularLightColor;
+
+out vec4 fragColor;
+
+void main(void) {
+    vec3 nFragNormal = normalize(fragNormal);
+    vec3 lightDir = normalize(lightPosition - fragPosition);
+    vec3 viewDir = normalize(-fragPosition);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+
+    float diffuseWeight = max(dot(nFragNormal, lightDir), 0.0);
+    float specularWeight = pow(max(dot(nFragNormal, halfwayDir), 0.0), shininess);
+
+    fragColor = vec4((  kAmbient * ambientLightColor
+                      + kDiffuse * diffuseLightColor * diffuseWeight
+                      + kSpecular * specularLightColor * specularWeight), 1.0);
+}
+</script>
+
+
+<body onload="startup();">
+    <canvas id="glCanvas" width="600" height="600"></canvas>
+</body>
+
+<fieldset>
+    <legend>Data</legend>
+    <div>
+        <p id="sphereCount"></p><br>
+
+        <input type="checkbox" id="controlAccel" checked>
+        <label for="controlAccel">Keep acceleration due to gravity at g = -9.80665 ms<sup>-2</sup>&emsp;</label>
+        <input type="range" id="acceleration" min="-20" max="20" value="-9.80665" step="0.00001" disabled>
+        <label for="acceleration">Acceleration due to gravity</label>
+        <p id="currAccel"></p>
+        <input type="button" id="freeze" value="Freeze camera (set camera speed to 0)"><br><br><br>
+
+        <input type="range" id="bounce" min="0" max="1" value="1" step="0.001">
+        <label for="bounce">Bounce factor (return velocity = incoming velocity * bounce factor)</label>
+        <p id="currBounce"></p><br>
+
+        <input type="range" id="drag" min="0" max="1" value="1" step="0.001">
+        <label for="drag">Drag coefficient</label>
+        <p id="currDrag"></p>
+
+        <p><b>TIP:</b> For "ideal" bouncing, set the bounce factor to 1 and the drag coefficient to 0.</p>
+    </div>
+
+</fieldset>
+
+<table style="border:1px solid black; width:100%">
+    <caption>User Interface</caption>
+    <tr>
+        <th>Keys: what they probably look like on your keyboard</th>
+        <th>What they do</th>
+    </tr>
+    <tbody>
+        <tr>
+            <td style="text-align:center">r (lowercase)</td>
+            <td style="text-align:center">Remove all spheres, reset everything</td>
+        </tr>
+        <tr>
+            <td style="text-align:center">Equal sign: =</td>
+            <td style="text-align:center">Spawn 2 new spheres</td>
+        </tr>
+        <tr>
+            <td style="text-align:center">Minus sign / hyphen: -</td>
+            <td style="text-align:center">Remove 1 of the 2 spheres that were last spawned</td>
+        </tr>
+    </tbody>
+</table>
+
+</html>
