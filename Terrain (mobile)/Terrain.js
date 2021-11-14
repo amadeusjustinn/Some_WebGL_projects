@@ -1,19 +1,5 @@
 /**
  * @file Terrain.js - A simple 3D terrain model for WebGL
- * @author Ian Rudnick <itr2@illinois.edu>
- * @brief Starter code for CS 418 MP3 at the University of Illinois at
- * Urbana-Champaign.
- *
- * Updated Spring 2021 for WebGL 2.0/GLSL 3.00 ES.
- *
- * You'll need to implement the following functions:
- * setVertex(v, i) - convenient vertex access for 1-D array
- * getVertex(v, i) - convenient vertex access for 1-D array
- * generateTriangles() - generate a flat grid of triangles
- * shapeTerrain() - shape the grid into more interesting terrain
- * calculateNormals() - calculate normals after warping terrain
- *
- * Good luck! Come to office hours if you get stuck!
  */
 
 class Terrain {

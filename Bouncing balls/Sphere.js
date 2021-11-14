@@ -1,6 +1,5 @@
 /**
  * @fileoverview Sphere.js - Class for triangulated meshes of spheres.
- * @author Ian Rudnick <itr2@illinois.edu>
  */
 
 class Sphere {

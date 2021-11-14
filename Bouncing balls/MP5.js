@@ -1,10 +1,5 @@
 /**
  * @file MP5.js - A simple WebGL rendering engine
- * @author Ian Rudnick <itr2@illinois.edu>
- * @brief Starter code for CS 418 MP5 at the University of Illinois at
- * Urbana-Champaign.
- *
- * Updated Spring 2021 for WebGL 2.0/GLSL 3.00 ES.
  */
 
 /** @global The WebGL context */
